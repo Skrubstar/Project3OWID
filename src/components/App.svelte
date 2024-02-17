@@ -1,5 +1,6 @@
 <script>
     import * as d3 from 'd3';
+    import { onMount } from 'svelte';
 
     let energyData = [];
 
@@ -17,11 +18,12 @@
 </script>
 
 <main>
-    <!-- Add HTML elements here -->
+    <h1>Hello Team!</h1>
+    <p>Svelte Testing.</p>
 </main>
 
 <style>
     main {
-        // Add CSS styling here, scoped to only work on App.svelte
+        text-align: center;
     }
 </style>
