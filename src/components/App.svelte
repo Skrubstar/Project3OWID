@@ -8,24 +8,17 @@
     let width = 1280;
     let height = 720;
     let hoveredCountryId = null;
+    let year = "2022";
+    let yearData = []
 
     onMount(() => {
         Promise.all([
-            d3.csv("recent_energy_data.csv"),
+            d3.csv("owid-energy-data.csv"),
             d3.json('geojson.json')
-        ]).then(([energyData, geojsonData]) => {
-            for (let i = 0; i < energyData.length; i++) {
-                const iso_country_code = energyData[i].iso_code;
-                for (let j = 0; j < geojsonData.features.length; j++) {
-                    const country_code_json = geojsonData.features[j].properties.iso_a3;
-                    if (country_code_json === iso_country_code) {
-                        geojsonData.features[j].properties.energyData = energyData[i];
-                        break;
-                    }
-                }
-            }
+        ]).then(([energyDataLoaded, geojsonData]) => {
+            energyData = energyDataLoaded;
             dataset = geojsonData.features;
-            updateCountries();
+            updateCountries(year, energyData);
         });
     });
 
@@ -34,20 +27,38 @@
         .center([-30, 35]);
     const pathGenerator = d3.geoPath().projection(projection);
 
-    function updateCountries() {
+    function updateCountries(year, energyData) {
+        const yearData = energyData.filter(d => d.year === year);
+        for (let i = 0; i < yearData.length; i++) {
+            const iso_country_code = yearData[i].iso_code;
+            for (let j = 0; j < dataset.length; j++) {
+                const country_code_json = dataset[j].properties.iso_a3;
+                if (country_code_json === iso_country_code) {
+                    dataset[j].properties.yearData = yearData[i];
+                    break;
+                }
+            }
+        }
+
         countries = dataset.map(feature => ({
             id: feature.properties.iso_a3,
             path: pathGenerator(feature),
-            energyData: feature.properties.energyData
-        }));
+            yearData: feature.properties.yearData
+        }
+        ));
     }
 
     function hoveredCountryData(){
-        const country = countries.find(c => c.id === hoveredCountryId);
+        const country = countries.find(c => c.id == hoveredCountryId);
         console.log(country)
-        return country ? country.energyData : null;
+        return country ? country.yearData : null;
+    }
+
+    $: if (year >= 1950 && year <= 2022) {
+        updateCountries(String(year), energyData);
     }
 </script>
+<input type="number" min="1950" max="2022" bind:value={year} />
 
 <main>
     <svg width={width} height={height}>
