@@ -3,58 +3,86 @@
     import { onMount } from 'svelte';
 
     let energyData = [];
-
     let dataset = [];
+    let countries = [];
     let width = 1280;
     let height = 720;
-        Promise.all([d3.csv("recent_energy_data.csv"),
-        d3.json('geojson.json')])
-            .then(([energyData, dataset]) => {
-                for (var i = 0; i < energyData.length; i++) {
-                    var iso_country_code = energyData[i].iso_country;
-                    var index = energyData[i].index;
-                    for (var j = 0; j < dataset.features.length; j++) {
-                        var country_code_json = dataset.features[j].properties.iso_a3
-                        if (country_code_json == iso_country_code) {
-                            dataset.features[j].properties.corresponding_index = index;
-                            break;
-                            }
-                        }
+    let hoveredCountryId = null;
+
+    onMount(() => {
+        Promise.all([
+            d3.csv("recent_energy_data.csv"),
+            d3.json('geojson.json')
+        ]).then(([energyData, geojsonData]) => {
+            for (let i = 0; i < energyData.length; i++) {
+                const iso_country_code = energyData[i].iso_code;
+                for (let j = 0; j < geojsonData.features.length; j++) {
+                    const country_code_json = geojsonData.features[j].properties.iso_a3;
+                    if (country_code_json === iso_country_code) {
+                        geojsonData.features[j].properties.energyData = energyData[i];
+                        break;
                     }
-                console.log(dataset)
-                var countries = g.selectAll("path")
-                    .data(dataset.features)
-                    .enter().append("path")
-                    .attr("d", path)
-                    .attr("fill", "lightgray")
-                    .attr("stroke", "white");
-            });
+                }
+            }
+            dataset = geojsonData.features;
+            updateCountries();
+        });
+    });
 
-        let svg = d3.select("body")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .style("display", "block")
-            .style("margin", "auto")
-        var g = svg.append('g');
-        var projection = d3.geoNaturalEarth1()
-            .scale(250)
-            .center([-30, 35])
-        var path = d3.geoPath().projection(projection);
+    const projection = d3.geoNaturalEarth1()
+        .scale(250)
+        .center([-30, 35]);
+    const pathGenerator = d3.geoPath().projection(projection);
 
+    function updateCountries() {
+        countries = dataset.map(feature => ({
+            id: feature.properties.iso_a3,
+            path: pathGenerator(feature),
+            energyData: feature.properties.energyData
+        }));
+    }
+
+    function hoveredCountryData(){
+        const country = countries.find(c => c.id === hoveredCountryId);
+        console.log(country)
+        return country ? country.energyData : null;
+    }
 </script>
 
 <main>
-    <h1>Hello Team!</h1>
-    <p>Svelte Testing.</p>
-    </main>
+    <svg width={width} height={height}>
+        {#each countries as {id, path}}
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <path 
+            d={path}
+            fill="lightgray"
+            stroke="white"
+            on:mouseenter={() => hoveredCountryId = id}
+            on:mouseleave={() => hoveredCountryId = null}
+        />
+        {/each}
+    </svg>
+    {#if hoveredCountryId}
+    <div>
+        Hovered Country ID: {hoveredCountryId}
+        {#if hoveredCountryData()}
+        <div>
+            Energy Consumption: {hoveredCountryData().energyConsumption}
+        </div>
+        {/if}
+    </div>
+    {/if}
+</main>
 
 <style>
     * {
-        text-align:center;
+        text-align: center;
     }
     path {
-        fill: none;
+        fill: lightgray;
         stroke: darkgreen;
+    }
+    path:hover {
+        fill: darkgreen;
     }
 </style>
