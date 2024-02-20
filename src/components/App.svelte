@@ -22,6 +22,12 @@
         });
     });
 
+    let selectedOption = '';
+    function handleSelectChange(event) {
+        selectedOption = event.target.value;
+        console.log(selectedOption);    
+    }
+
     const projection = d3.geoNaturalEarth1()
         .scale(250)
         .center([-30, 35]);
@@ -61,6 +67,25 @@
 <input type="number" min="1950" max="2022" bind:value={year} />
 
 <main>
+    <label for="dropdown">Choose the enegy type:</label>
+    <select on:change={handleSelectChange}>
+        <option value="">Select an option</option>
+        <option value="Biofuel">Biofuel</option>
+        <option value="Coal">Coal</option>
+        <option value="Fossil Fuel">Fossil Fuel</option>
+        <option value="Gas">Gas</option>
+        <option value="Hydro">Hydro</option>
+        <option value="Nuclear">Nuclear</option>
+        <option value="Oil">Oil</option>
+        <option value="Solar">Solar</option>
+        <option value="Wind">Wind</option>
+        <option value="Other Renewable">Other Renewable</option>
+    </select>
+
+    {#if selectedOption !== ''}
+        <p>The selected option is {selectedOption}. This is calculated in TWh.</p>
+    {/if}
+
     <svg width={width} height={height}>
         {#each countries as {id, path}}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
