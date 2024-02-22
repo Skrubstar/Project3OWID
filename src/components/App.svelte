@@ -38,10 +38,11 @@
         "Biofuel" : ['#D3FEDA', '#00CC20'],
         "Wind" : ['#C7FDFD', '#2470C8']
     }
-
-
+    let selectedOption = 'Fossil Fuel';
 
     onMount(() => {
+        createTitle()
+        createLegend()
         Promise.all([
             d3.csv("owid-energy-data.csv"),
             d3.json('geojson.json')
@@ -50,9 +51,19 @@
             dataset = geojsonData.features;
             updateCountries(year, energyData);
         });
+        
     });
 
-    let selectedOption = 'Fossil Fuel';
+    function createTitle() {
+        const svg = d3.select("#worldmap");
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", 30) // Adjust this value to position the title above the map
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .style("font-weight", "bold")
+            .text("World Energy Consumption Map");
+    }
     function handleSelectChange(event) {
         selectedOption = event.target.value;
         newOption=0;
@@ -70,6 +81,7 @@
         for (let i = 0; i< paths.length; i++) {
             paths[i].setAttribute("fill", fillvalues[i])
         }
+        createLegend();
     }
 
     const projection = d3.geoNaturalEarth1()
@@ -193,7 +205,7 @@
         showBarChart(hoveredCountryData());
     }
 
-    function test(yearData) {
+function test(yearData) {
     let reference = referenceColumns[selectedOption];
     if (yearData === undefined || yearData[reference] === undefined || yearData[reference] == "") {
         return "grey";
@@ -206,44 +218,40 @@
 }
 
 function createLegend() {
-    const legend = d3.select("#legend");
-    legend.selectAll("*").remove(); // Clear any existing legend
+    const svg = d3.select("#worldmap");
+    const legendGroup = svg.append("g")
+        .attr("transform", `translate(${width - 150}, 10)`);
 
     const legendData = [
-        { name: 'High', color: referenceColors[selectedOption][1] },
-        { name: 'Medium', color: d3.interpolate(referenceColors[selectedOption][0], referenceColors[selectedOption][1])(0.5) },
-        { name: 'Low', color: referenceColors[selectedOption][0] },
-        { name: 'No Data', color: 'grey' }
+        { label: 'High', color: referenceColors[selectedOption][1] },
+        { label: 'Medium', color: d3.interpolate(referenceColors[selectedOption][0], referenceColors[selectedOption][1])(0.5) },
+        { label: 'Low', color: referenceColors[selectedOption][0] },
+        { label: 'No Data', color: 'grey' }
     ];
-
-    // Adjust the position of the legend group
-    const legendGroup = legend.append("g")
-        .attr("transform", 'translate(0, 110)'); // Adjust these values as needed
 
     const legendItems = legendGroup.selectAll(".legend-item")
         .data(legendData)
         .enter()
         .append("g")
         .attr("class", "legend-item")
-        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+        .attr("transform", (d, i) => `translate(0, ${i * 25})`);
 
     legendItems.append("rect")
-        .attr("width", 18)
-        .attr("height", 18)
+        .attr("width", 20)
+        .attr("height", 20)
         .attr("fill", d => d.color);
 
     legendItems.append("text")
-        .attr("x", 24)
-        .attr("y", 9)
-        .attr("dy", "0.35em")
-        .text(d => d.name);
+        .attr("x", 30)
+        .attr("y", 15)
+        .text(d => d.label);
 
     // Add a border around the legend
     legendGroup.append("rect")
         .attr("x", -5)
         .attr("y", -5)
         .attr("width", 150) // Adjust the width as needed
-        .attr("height", legendData.length * 20 + 10) // Adjust the height based on the number of items
+        .attr("height", legendData.length * 25 + 10) // Adjust the height based on the number of items
         .attr("fill", "none")
         .attr("stroke", "black")
         .attr("stroke-width", 1);
