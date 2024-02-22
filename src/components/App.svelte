@@ -11,6 +11,7 @@
     let year = "2022";
     let yearData = [];
     let barChart = d3.select("#barChart");
+    const barChartContainer = d3.select("#barChartContainer")
 
     onMount(() => {
         Promise.all([
@@ -62,65 +63,86 @@
     }
 
     function showBarChart(countryData) {
-    const barChartData = [
-        { category: 'Bio-Fuel', value: +countryData.biofuel_consumption },
-        { category: 'Coal', value: +countryData.coal_consumption },
-        { category: 'Fossil Fuel', value: +countryData.fossil_fuel_consumption },
-        { category: 'Gas', value: +countryData.gas_consumption },
-        { category: 'Hydro', value: +countryData.hydro_consumption },
-        { category: 'Nuclear', value: +countryData.nuclear_consumption },
-        { category: 'Oil', value: +countryData.oil_consumption },
-        { category: 'Solar', value: +countryData.solar_consumption },
-        { category: 'Wind', value: +countryData.wind_consumption },
-        { category: 'Other', value: +countryData.other_consumption }
-    ];
+        const barChartData = [
+            { category: 'Bio-Fuel', value: +countryData.biofuel_consumption },
+            { category: 'Coal', value: +countryData.coal_consumption },
+            { category: 'Fossil Fuel', value: +countryData.fossil_fuel_consumption },
+            { category: 'Gas', value: +countryData.gas_consumption },
+            { category: 'Hydro', value: +countryData.hydro_consumption },
+            { category: 'Nuclear', value: +countryData.nuclear_consumption },
+            { category: 'Oil', value: +countryData.oil_consumption },
+            { category: 'Solar', value: +countryData.solar_consumption },
+            { category: 'Wind', value: +countryData.wind_consumption },
+            { category: 'Other', value: +countryData.other_consumption }
+        ];
 
-    const margin = {top: 20, right: 0, bottom: 60, left: 10},
-        chartWidth = 400 - margin.left - margin.right,
-        chartHeight = 300 - margin.top - margin.bottom;
+        const allZeroOrNaN = barChartData.every(d => d.value === 0 || isNaN(d.value));
+        if (allZeroOrNaN) {
+            barChartContainer.style("display", "none");
+            return; 
+    }
 
-    const x = d3.scaleBand()
-        .range([0, chartWidth])
-        .padding(0.1);
-    const y = d3.scaleLinear()
-        .range([chartHeight, 0]);
+        const margin = {top: 40, right: 0, bottom: 60, left: 50},
+            chartWidth = 350 - margin.left - margin.right,
+            chartHeight = 250 - margin.top - margin.bottom;
 
-    barChart.selectAll("*").remove(); // Clear previous chart
+        const x = d3.scaleBand()
+            .range([0, chartWidth])
+            .padding(0.1);
+        const y = d3.scaleLinear()
+            .range([chartHeight, 0]);
 
-    const svg = barChart
-        .attr("width", chartWidth + margin.left + margin.right)
-        .attr("height", chartHeight + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+        barChart.selectAll("*").remove(); 
 
-    // Set the domain for the x and y axes
-    x.domain(barChartData.map(d => d.category));
-    y.domain([0, d3.max(barChartData, d => d.value)]);
+        const svg = barChart
+            .attr("width", chartWidth + margin.left + margin.right)
+            .attr("height", chartHeight + margin.top + margin.bottom)
+            .attr("viewBox", `0 0 ${chartWidth + margin.left + margin.right} ${chartHeight + margin.top + margin.bottom}`)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+        svg.append("text")
+            .attr("x", chartWidth / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "16px")
+            .text(countryData.country);
 
-    // Define the color scale
-    const colorScale = d3.scaleOrdinal()
-        .domain(barChartData.map(d => d.category))
-        .range(["steelblue", "green", "red"]);
+        x.domain(barChartData.map(d => d.category));
+        y.domain([0, d3.max(barChartData, d => d.value)]);
 
-    // Create the bars for the bar chart
-    svg.selectAll(".bar")
-        .data(barChartData)
-      .enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", d => x(d.category))
-        .attr("width", x.bandwidth())
-        .attr("y", d => y(d.value))
-        .attr("height", d => chartHeight - y(d.value))
-        .attr("fill", d => colorScale(d.category)); // Use the color scale for the fill color
+        const colorScale = d3.scaleOrdinal()
+            .domain(barChartData.map(d => d.category))
+            .range(["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "cyan", "yellow"]);
 
-    // Add the x-axis
-    svg.append("g")
-        .attr("transform", `translate(0,${chartHeight})`)
-        .call(d3.axisBottom(x));
+        svg.selectAll(".bar")
+            .data(barChartData)
+        .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", d => x(d.category))
+            .attr("width", x.bandwidth())
+            .attr("y", d => y(d.value))
+            .attr("height", d => chartHeight - y(d.value))
+            .attr("fill", d => colorScale(d.category)); // Use the color scale for the fill color
 
-    // Add the y-axis
-    svg.append("g")
-        .call(d3.axisLeft(y));
+        // Add the x-axis
+        svg.append("g")
+            .attr("transform", `translate(0,${chartHeight})`)
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-90)");
+
+
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        barChartContainer.style("display", "block");
+        const offset = { x: 20, y: 0 }; // Adjust as needed
+        barChartContainer.style("left", (event.pageX + offset.x) + "px")
+        .style("top", (event.pageY + offset.y) + "px");        
+
 }
 
     $: if (year >= 1950 && year <= 2022) {
@@ -162,16 +184,13 @@
             on:mouseenter={() => hoveredCountryId = id}
             on:mouseleave={() => {
                 hoveredCountryId = null;
-                barChart.selectAll("*").remove(); // Clear the bar chart
+                barChart.selectAll("*").remove();
+                barChartContainer.style("display", "none");
             }}
         />
         {/each}
     </svg>
-    {#if hoveredCountryId}
-    <div>
-        Hovered Country ID: {hoveredCountryId}
-    </div>
-    {/if}
+
 </main>
 
 
