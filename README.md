@@ -1,3 +1,15 @@
+## Write Up
+We wanted to provide a breakdown of how every country in the world produces their electricity from various energy sources. We created a world map using GeoJSON and colored coded it based on overall electricity production for a certain energy source (gas, coal, etc.) Also, when someone hovers over a country, it provides a graph of that country's electricity production.
+
+For our development process, we started off by loading a general world map and then added in the OWID Energy data. From this, we looped through the various countries and added their country code into a dictionary; we tested this by printing the country code to the console as we added them. Afterwards, we added a dropdown option for the user to choose a certain energy type, which was saved to a local variable. Using this variable, we then updated the world map to have a gradient based on that country’s electricity production. We then added a dropdown menu to choose a certain year, to allow an even more immersive and specific view. Finally, we added a bar graph on hover.
+
+The aspects that took the most time was how to connect the country codes to their specific data.
+
+Charles Wang: Loaded GeoJSON map, connected energy type selection to column, added in gradient of colors
+Jevan Chahal: Connected country electricity data to map, added tooltip for bar graph, year dropdown menu, Coloring in the legend
+Abishek Siva: energy type selection dropdown, writeup
+
+
 # create-svelte
 
 ## Generate static site using svelte SSG
