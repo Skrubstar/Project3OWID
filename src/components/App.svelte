@@ -58,11 +58,18 @@
         const svg = d3.select("#worldmap");
         svg.append("text")
             .attr("x", width / 2)
-            .attr("y", 30) // Adjust this value to position the title above the map
+            .attr("y", 20) 
             .attr("text-anchor", "middle")
             .style("font-size", "24px")
             .style("font-weight", "bold")
-            .text("World Energy Consumption Map");
+            .text("Electricity Generation Per Country");
+
+        svg.append("text")
+            .attr("x", 150)
+            .attr("y", 20) 
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Credit to the OWID energy database");
     }
     function handleSelectChange(event) {
         selectedOption = event.target.value;
@@ -175,9 +182,8 @@
             .attr("width", x.bandwidth())
             .attr("y", d => y(d.value))
             .attr("height", d => chartHeight - y(d.value))
-            .attr("fill", d => colorScale(d.category)); // Use the color scale for the fill color
+            .attr("fill", d => colorScale(d.category)); 
 
-        // Add the x-axis
         svg.append("g")
             .attr("transform", `translate(0,${chartHeight})`)
             .call(d3.axisBottom(x))
@@ -192,7 +198,7 @@
             .call(d3.axisLeft(y));
 
         barChartContainer.style("display", "block");
-        const offset = { x: 20, y: 0 }; // Adjust as needed
+        const offset = { x: 20, y: 0 }; 
         barChartContainer.style("left", (event.pageX + offset.x) + "px")
         .style("top", (event.pageY + offset.y) + "px");   
 
@@ -213,7 +219,7 @@ function test(yearData) {
     if (newOption == 0) {
         scaleColors();
     }
-    createLegend(); // Call the function to create the legend
+    createLegend(); 
     return colors(parseFloat(yearData[reference]));
 }
 
@@ -246,12 +252,11 @@ function createLegend() {
         .attr("y", 15)
         .text(d => d.label);
 
-    // Add a border around the legend
     legendGroup.append("rect")
         .attr("x", -5)
         .attr("y", -5)
-        .attr("width", 150) // Adjust the width as needed
-        .attr("height", legendData.length * 25 + 10) // Adjust the height based on the number of items
+        .attr("width", 150) 
+        .attr("height", legendData.length * 25 + 10)
         .attr("fill", "none")
         .attr("stroke", "black")
         .attr("stroke-width", 1);
