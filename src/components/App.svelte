@@ -29,7 +29,7 @@
     var domain=[];
     let referenceColors = {
         "Solar" : ['#DBF3CC', '#40A600'],
-        "Coal" :['#f5dcd0', '#eb1515'],
+        "Coal" :['#e3c3a3', '#996003'],
         "Fossil Fuel" : ['#FFEEEE', '#FF0000'],
         "Hydro" : ['#DAD7FB', '#3725FA'],
         "Gas" : ['#FFEAF8', '#FF00AB'],
@@ -106,16 +106,15 @@
 
     function showBarChart(countryData) {
         const barChartData = [
+            { category: 'Fossil Fuel', value: +countryData.fossil_electricity},
             { category: 'Biofuel', value: +countryData.biofuel_electricity },
             { category: 'Coal', value: +countryData.coal_electricity },
-            { category: 'Fossil Fuel', value: +countryData.fossil_electricity},
             { category: 'Gas', value: +countryData.gas_electricity },
             { category: 'Hydro', value: +countryData.hydro_electricity },
             { category: 'Nuclear', value: +countryData.nuclear_electricity },
             { category: 'Oil', value: +countryData.oil_electricity },
             { category: 'Solar', value: +countryData.solar_electricity },
-            { category: 'Wind', value: +countryData.wind_electricity },
-            { category: 'Other', value: +countryData.other_renewable_electricity}
+            { category: 'Wind', value: +countryData.wind_electricity }
         ];
 
         const allZeroOrNaN = barChartData.every(d => d.value === 0 || isNaN(d.value));
@@ -154,7 +153,7 @@
 
         const colorScale = d3.scaleOrdinal()
             .domain(barChartData.map(d => d.category))
-            .range(["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "cyan", "yellow"]);
+            .range(["#FF0000", "#D3FEDA", "#996003", "#FF00AB", "#3725FA", "#10D874", "#FF0069", "#40A600", "#C7FDFD"]);
 
         svg.selectAll(".bar")
             .data(barChartData)
@@ -194,17 +193,63 @@
         showBarChart(hoveredCountryData());
     }
 
-        function test(yearData) {
-        let reference = referenceColumns[selectedOption]
-        if (yearData === undefined || yearData[reference] === undefined 
-        || yearData[reference] == "") {
-            return "grey";
-        }
-        if (newOption == 0) {
-            scaleColors();
-        }
-        return colors(parseFloat(yearData[reference]));
+    function test(yearData) {
+    let reference = referenceColumns[selectedOption];
+    if (yearData === undefined || yearData[reference] === undefined || yearData[reference] == "") {
+        return "grey";
     }
+    if (newOption == 0) {
+        scaleColors();
+    }
+    createLegend(); // Call the function to create the legend
+    return colors(parseFloat(yearData[reference]));
+}
+
+function createLegend() {
+    const legend = d3.select("#legend");
+    legend.selectAll("*").remove(); // Clear any existing legend
+
+    const legendData = [
+        { name: 'High', color: referenceColors[selectedOption][1] },
+        { name: 'Medium', color: d3.interpolate(referenceColors[selectedOption][0], referenceColors[selectedOption][1])(0.5) },
+        { name: 'Low', color: referenceColors[selectedOption][0] },
+        { name: 'No Data', color: 'grey' }
+    ];
+
+    // Adjust the position of the legend group
+    const legendGroup = legend.append("g")
+        .attr("transform", 'translate(0, 110)'); // Adjust these values as needed
+
+    const legendItems = legendGroup.selectAll(".legend-item")
+        .data(legendData)
+        .enter()
+        .append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+    legendItems.append("rect")
+        .attr("width", 18)
+        .attr("height", 18)
+        .attr("fill", d => d.color);
+
+    legendItems.append("text")
+        .attr("x", 24)
+        .attr("y", 9)
+        .attr("dy", "0.35em")
+        .text(d => d.name);
+
+    // Add a border around the legend
+    legendGroup.append("rect")
+        .attr("x", -5)
+        .attr("y", -5)
+        .attr("width", 150) // Adjust the width as needed
+        .attr("height", legendData.length * 20 + 10) // Adjust the height based on the number of items
+        .attr("fill", "none")
+        .attr("stroke", "black")
+        .attr("stroke-width", 1);
+}
+
+
 
     function scaleColors() {
         newOption=1;
@@ -277,8 +322,5 @@
     }
     path {
         stroke: darkgreen;
-    }
-    path:hover {
-        fill: darkgreen;
     }
 </style>
