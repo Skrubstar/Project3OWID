@@ -13,6 +13,34 @@
     let barChart = d3.select("#barChart");
     const barChartContainer = d3.select("#barChartContainer")
 
+    let referenceColumns = {
+        "Oil" : "oil_electricity",
+        "Coal": "coal_electricity",
+        "Biofuel": "biofuel_electricity",
+        "Nuclear": "nuclear_electricity",
+        "Fossil Fuel": "fossil_electricity",
+        "Gas": "gas_electricity",
+        "Hydro": "hydro_electricity",
+        "Solar": "solar_electricity",
+        "Wind": "wind_electricity",
+    }
+    var colors=[];
+    let newOption = 0;
+    var domain=[];
+    let referenceColors = {
+        "Solar" : ['#DBF3CC', '#40A600'],
+        "Coal" :['#f5dcd0', '#eb1515'],
+        "Fossil Fuel" : ['#FFEEEE', '#FF0000'],
+        "Hydro" : ['#DAD7FB', '#3725FA'],
+        "Gas" : ['#FFEAF8', '#FF00AB'],
+        "Nuclear" : ['#D5FFEA', '#10D874'],
+        "Oil" : ['#FFCCE1', '#FF0069'],
+        "Biofuel" : ['#D3FEDA', '#00CC20'],
+        "Wind" : ['#C7FDFD', '#2470C8']
+    }
+
+
+
     onMount(() => {
         Promise.all([
             d3.csv("owid-energy-data.csv"),
@@ -24,10 +52,24 @@
         });
     });
 
-    let selectedOption = '';
+    let selectedOption = 'Fossil Fuel';
     function handleSelectChange(event) {
         selectedOption = event.target.value;
-        console.log(selectedOption);    
+        newOption=0;
+        const svgAttr = document.getElementById("worldmap");
+        const paths = svgAttr.querySelectorAll("path")
+        let reference = referenceColumns[selectedOption]
+        let fillvalues=[]
+        for (let country in countries) {
+                if (countries[country].yearData && countries[country].yearData[reference]) {
+                    fillvalues.push(test(countries[country].yearData));
+                } else {
+                    fillvalues.push(test(undefined))
+                }
+        }
+        for (let i = 0; i< paths.length; i++) {
+            paths[i].setAttribute("fill", fillvalues[i])
+        }
     }
 
     const projection = d3.geoNaturalEarth1()
@@ -64,16 +106,16 @@
 
     function showBarChart(countryData) {
         const barChartData = [
-            { category: 'Bio-Fuel', value: +countryData.biofuel_consumption },
-            { category: 'Coal', value: +countryData.coal_consumption },
-            { category: 'Fossil Fuel', value: +countryData.fossil_fuel_consumption },
-            { category: 'Gas', value: +countryData.gas_consumption },
-            { category: 'Hydro', value: +countryData.hydro_consumption },
-            { category: 'Nuclear', value: +countryData.nuclear_consumption },
-            { category: 'Oil', value: +countryData.oil_consumption },
-            { category: 'Solar', value: +countryData.solar_consumption },
-            { category: 'Wind', value: +countryData.wind_consumption },
-            { category: 'Other', value: +countryData.other_consumption }
+            { category: 'Biofuel', value: +countryData.biofuel_electricity },
+            { category: 'Coal', value: +countryData.coal_electricity },
+            { category: 'Fossil Fuel', value: +countryData.fossil_electricity},
+            { category: 'Gas', value: +countryData.gas_electricity },
+            { category: 'Hydro', value: +countryData.hydro_electricity },
+            { category: 'Nuclear', value: +countryData.nuclear_electricity },
+            { category: 'Oil', value: +countryData.oil_electricity },
+            { category: 'Solar', value: +countryData.solar_electricity },
+            { category: 'Wind', value: +countryData.wind_electricity },
+            { category: 'Other', value: +countryData.other_renewable_electricity}
         ];
 
         const allZeroOrNaN = barChartData.every(d => d.value === 0 || isNaN(d.value));
@@ -141,9 +183,9 @@
         barChartContainer.style("display", "block");
         const offset = { x: 20, y: 0 }; // Adjust as needed
         barChartContainer.style("left", (event.pageX + offset.x) + "px")
-        .style("top", (event.pageY + offset.y) + "px");        
+        .style("top", (event.pageY + offset.y) + "px");   
 
-}
+    }
 
     $: if (year >= 1950 && year <= 2022) {
         updateCountries(String(year), energyData);
@@ -151,35 +193,70 @@
     $: if (hoveredCountryId && hoveredCountryData()) {
         showBarChart(hoveredCountryData());
     }
+
+        function test(yearData) {
+        let reference = referenceColumns[selectedOption]
+        if (yearData === undefined || yearData[reference] === undefined 
+        || yearData[reference] == "") {
+            return "grey";
+        }
+        if (newOption == 0) {
+            scaleColors();
+        }
+        return colors(parseFloat(yearData[reference]));
+    }
+
+    function scaleColors() {
+        newOption=1;
+        let countries_copy=[];
+        let reference = referenceColumns[selectedOption]
+        for (let country in countries) {
+            if (countries[country].yearData) {
+                if (countries[country].yearData[reference]) {
+                    countries_copy.push(parseFloat(countries[country].yearData[reference]));
+                }
+            }
+        }
+        countries_copy = countries_copy.sort(function (a,b) {
+              return a-b;  
+            });
+        countries_copy = countries_copy.slice(countries_copy.lastIndexOf(0))
+        domain = [0, 
+            (d3.quantile(countries_copy, 0.99))
+            ]
+        let range = referenceColors[selectedOption]
+        colors = d3.scaleLinear()
+            .domain(domain)
+            .range(range)
+            .clamp(true);
+    }     
 </script>
 <input type="number" min="1950" max="2022" bind:value={year} />
 
 <main>
     <label for="dropdown">Choose the energy type:</label>
     <select on:change={handleSelectChange}>
-        <option value="">Select an option</option>
+`       <option value="Fossil Fuel">Fossil Fuel</option>
         <option value="Biofuel">Biofuel</option>
         <option value="Coal">Coal</option>
-        <option value="Fossil Fuel">Fossil Fuel</option>
         <option value="Gas">Gas</option>
         <option value="Hydro">Hydro</option>
         <option value="Nuclear">Nuclear</option>
         <option value="Oil">Oil</option>
         <option value="Solar">Solar</option>
         <option value="Wind">Wind</option>
-        <option value="Other Renewable">Other Renewable</option>
     </select>
 
     {#if selectedOption !== ''}
         <p>The selected option is {selectedOption}. This is calculated in TWh.</p>
     {/if}
 
-    <svg width={width} height={height}>
-        {#each countries as {id, path}}
+    <svg id="worldmap" width={width} height={height}>
+        {#each countries as {id, path, yearData}}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <path 
             d={path}
-            fill="lightgray"
+            fill={test(yearData)}
             stroke="white"
             on:mouseenter={() => hoveredCountryId = id}
             on:mouseleave={() => {
@@ -199,7 +276,6 @@
         text-align: center;
     }
     path {
-        fill: lightgray;
         stroke: darkgreen;
     }
     path:hover {
